@@ -1,0 +1,15 @@
+# the tag "version" is obsolete and can be removed on newer versions
+# version: "3.9"
+
+services:
+  ns3:
+    build:
+      context: .
+      ssh:
+        - default
+    container_name: ns3-nbiot
+    working_dir: /opt/ns3-nbiot
+    volumes:
+      - ./ns3-nbiot:/ns3-nbiot
+    stdin_open: true
+    tty: true
