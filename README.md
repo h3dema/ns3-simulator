@@ -11,7 +11,7 @@ Follow these steps to clone the repository and launch the NS-3 simulator environ
 Clone the repository to your local machine and navigate into the project directory:
 
 ```bash
-git clone [https://github.com/h3dema/ns3-simulator.git](https://github.com/h3dema/ns3-simulator.git)
+git clone https://github.com/h3dema/ns3-simulator.git
 cd ns3-simulator
 ```
 
@@ -56,6 +56,5 @@ exit
 ```
 
 
----
 
 ```
