@@ -1,1 +1,6 @@
 *.doc[x]
+*.tmp
+*.temp
+
+logs/
+ns3-nbiot/
