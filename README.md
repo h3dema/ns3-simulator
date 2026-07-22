@@ -54,7 +54,3 @@ To exit the container environment at any time, simply run:
 ```bash
 exit
 ```
-
-
-
-```
