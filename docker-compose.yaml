@@ -11,5 +11,6 @@ services:
     working_dir: /opt/ns3-nbiot
     volumes:
       - ./ns3-nbiot:/ns3-nbiot
+      - ./logs:/opt/ns3-nbiot/logs
     stdin_open: true
     tty: true
