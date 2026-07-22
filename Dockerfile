@@ -36,6 +36,9 @@ RUN apt install -y \
     tcpdump \
     wireshark
 
+RUN apt -y install python-is-python3
+RUN pip install matplotlib numpy pandas tqdm pyshark
+
 # Clone custom NS-3 NB-IoT repository
 WORKDIR /
 # when the repo is public, use the following line
