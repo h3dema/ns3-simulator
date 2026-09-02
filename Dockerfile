@@ -55,7 +55,7 @@ RUN --mount=type=ssh git clone git@github.com:imec-idlab/ns3-nbiot-ambient-iot.g
 #     ssh-keyscan github.com >> /root/.ssh/known_hosts
 # RUN --mount=type=ssh git clone git@github.com:BelogaevIDLab/ns3-nbiot.git /opt/ns3-nbiot
 
-COPY example/nb-scenario5.cc /opt/ns3-nbiot/scratch
+# COPY example/nb-scenario5.cc /opt/ns3-nbiot/scratch
 WORKDIR /opt/ns3-nbiot
 
 # Build NS-3
