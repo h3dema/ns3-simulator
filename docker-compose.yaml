@@ -5,8 +5,6 @@ services:
   ns3:
     build:
       context: .
-      ssh:
-        - default
     container_name: ns3-nbiot
     working_dir: /opt/ns3-nbiot
     volumes:
