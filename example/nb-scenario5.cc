@@ -160,7 +160,7 @@ main (int argc, char *argv[])
   // ns3::LogComponentEnable("GenericCapacitor", LOG_LEVEL_INFO);
   // ns3::LogComponentEnable("BasicSolarEnergyHarvester", LOG_LEVEL_INFO);
 
-  ns3::Time simTime = Minutes(180);
+  ns3::Time simTime = Seconds(60);
   std::string simName = "cap";
 
   uint8_t worker = 0;
@@ -176,7 +176,7 @@ main (int argc, char *argv[])
 
   // Packet interval
   // BUG: if the packet interval is too small (e.g. 1 second), the simulation will crash (on lte-enb-rrc.cc)
-  Time packetinterval_app_a = Minutes(1);
+  Time packetinterval_app_a = Seconds(1);
 
   // Capacitor
   double capacitance = 5;  // F
