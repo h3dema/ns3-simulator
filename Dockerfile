@@ -41,15 +41,21 @@ RUN pip install matplotlib numpy pandas tqdm pyshark
 
 # Clone custom NS-3 NB-IoT repository
 WORKDIR /
+
+# Preload GitHub fingerprint BEFORE clone
+RUN mkdir -p /root/.ssh && \
+    chmod 700 /root/.ssh && \
+    ssh-keyscan -t rsa,ecdsa,ed25519 github.com >> /root/.ssh/known_hosts
+
 # when the repo is public, use the following line
-RUN git clone https://github.com/imec-idlab/ns3-nbiot-ambient-iot.git
+RUN --mount=type=ssh git clone git@github.com:imec-idlab/ns3-nbiot-ambient-iot.git /opt/ns3-nbiot
 # since it is private, use the clone below and you need to pass the ssh key to docker using SSH-AGENT
 # Add GitHub to known_hosts so SSH clone works
 # RUN mkdir -p /root/.ssh && \
 #     ssh-keyscan github.com >> /root/.ssh/known_hosts
 # RUN --mount=type=ssh git clone git@github.com:BelogaevIDLab/ns3-nbiot.git /opt/ns3-nbiot
 
-
+COPY example/nb-scenario5.cc /opt/ns3-nbiot/scratch
 WORKDIR /opt/ns3-nbiot
 
 # Build NS-3
