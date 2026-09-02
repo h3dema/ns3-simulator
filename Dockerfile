@@ -44,9 +44,9 @@ WORKDIR /
 
 RUN git -c http.version=HTTP/1.1 \
         -c protocol.version=0 \
-        ls-remote https://github.com/imec-idlab/ns3-nbiot-ambient-iot.git
+        ls-remote https://github.com/h3dema/ns3-nbiot-ambient-iot.git
 
-RUN git clone https://github.com/imec-idlab/ns3-nbiot-ambient-iot.git /opt/ns3-nbiot
+RUN git clone https://github.com/h3dema/ns3-nbiot-ambient-iot.git /opt/ns3-nbiot
 
 # COPY example/nb-scenario5.cc /opt/ns3-nbiot/scratch
 WORKDIR /opt/ns3-nbiot
