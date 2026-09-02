@@ -94,13 +94,16 @@
 #include "ns3/random-variable-stream.h"
 #include "ns3/lte-module.h"
 #include <ns3/winner-plus-propagation-loss-model.h>
-//#include "ns3/gtk-config-store.h"
 #include "ns3/log.h"
 #include "ns3/nb-iot-energy.h"
 #include "ns3/energy-state-machine.h"
 #include "ns3/basic-energy-harvester.h"
 #include "ns3/basic-solar-energy-harvester.h"
 #include "ns3/generic-capacitor.h"
+#include "ns3/markov-udp-client.h"
+
+#include "ns3/netanim-module.h"
+
 
 using namespace ns3;
 
@@ -131,6 +134,18 @@ enum class HarvestType {
 };
 
 
+/**
+ * Tracer function to log state changes to the console.
+ * @param node_id Node ID.
+ * @param oldVal Previous state value.
+ * @param newVal New state value.
+ */
+static void StateChangeTracer(int node_id, int oldVal, int newVal)
+{
+  NS_LOG_INFO(Simulator::Now().GetSeconds() << "s: State changed at node " << node_id << " from " << oldVal << " to " << newVal);
+}
+
+
 // This is only an example of how to create a trace callback
 // to track the changes in a Trace variable and log in `logdir`
 // this function has 2 fixed parameters (logdir and node_id)
@@ -159,6 +174,8 @@ main (int argc, char *argv[])
   // ns3::LogComponentEnable("LteUeRrc", LOG_LEVEL_INFO);
   // ns3::LogComponentEnable("GenericCapacitor", LOG_LEVEL_INFO);
   // ns3::LogComponentEnable("BasicSolarEnergyHarvester", LOG_LEVEL_INFO);
+  ns3::LogComponentEnable("EnergyMarkov", LOG_LEVEL_INFO);
+  ns3::LogComponentEnable("MarkovUdpClient", LOG_LEVEL_INFO);
 
   ns3::Time simTime = Seconds(60);
   std::string simName = "cap";
@@ -171,12 +188,14 @@ main (int argc, char *argv[])
   int num_ues = 1;  // For now, 1 UE talks to a remote host via one eNB
 
   // 32 Bytes 5G mMTC payload + 4 Bytes CoAP Header + 13 Bytes DTLS Header
-  // UDP Header and IP Header  are added by NS-3
-  int packetsize_app_a = 49;
+  // UDP Header and IP Header are added by NS-3
+  uint packetsize_app = 49;
 
   // Packet interval
-  // BUG: if the packet interval is too small (e.g. 1 second), the simulation will crash (on lte-enb-rrc.cc)
-  Time packetinterval_app_a = Seconds(1);
+  Time packetinterval_app = Seconds(10);
+
+  // Access delay for the application, in milliseconds
+  Time access = MilliSeconds(10);
 
   // Capacitor
   double capacitance = 5;  // F
@@ -196,20 +215,12 @@ main (int argc, char *argv[])
   cmd.AddValue ("ciot", "Cellular IoT Optimization",ciot);
   cmd.AddValue ("edt", "Early Data Transmission",edt);
   cmd.AddValue ("coverage", "Cell size in meters", cellsize);
-  cmd.AddValue ("capacitance",
-              "Capacitance of the capacitor in Farads (must be > 0)",
-              capacitance);
-  cmd.AddValue ("initialVoltage",
-                "Initial capacitor voltage in Volts (must be > 0)",
-                initialVoltage);
 
-  cmd.AddValue ("thresholdVoltage",
-                "Threshold voltage in Volts (must be > 0)",
-                thresholdVoltage);
+  cmd.AddValue ("initialVoltage", "Initial capacitor voltage in Volts (must be > 0)", initialVoltage);
+  cmd.AddValue ("thresholdVoltage", "Threshold voltage in Volts (must be > 0)", thresholdVoltage);
 
-  cmd.AddValue ("maxCapacitorVoltage",
-                "Maximum allowed capacitor voltage in Volts (must be > 0)",
-                maxCapacitorVoltage);
+  cmd.AddValue ("capacitance", "Capacitance of the capacitor in Farads (must be > 0)", capacitance);
+  cmd.AddValue ("maxCapacitorVoltage","Maximum allowed capacitor voltage in Volts (must be > 0)", maxCapacitorVoltage);
   cmd.Parse (argc, argv);
 
   // Validation
@@ -233,7 +244,6 @@ main (int argc, char *argv[])
   // Print for reference
   std::cout << "State ACTIVE  : " << static_cast<int>(State::ACTIVE) << std::endl;
   std::cout << "State INACTIVE: " << static_cast<int>(State::INACTIVE) << std::endl;
-
 
   // configure LTE
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
@@ -259,6 +269,12 @@ main (int argc, char *argv[])
   Ptr<Node> remoteHost = remoteHostContainer.Get (0);
   InternetStackHelper internet;
   internet.Install (remoteHostContainer);
+
+  MobilityHelper mobility;
+  mobility.SetMobilityModel("ns3::ConstantPositionMobilityModel");
+  mobility.Install(remoteHostContainer);
+  mobility.Install(pgw);
+
 
   // Create the Internet
   PointToPointHelper p2ph;
@@ -315,7 +331,8 @@ main (int argc, char *argv[])
   for (int i = 0; i < num_ues; ++i){
     Vector position = m_position->GetNext ();
     positionAllocUe->Add (position);
-    NS_LOG_INFO("Node#" << i << " Position:" << position.x << "," << position.y << "," << position.z);
+    // there are 4 nodes in total before the UEs
+    NS_LOG_INFO("UE Node id: " << i + 4 << " Position:" << position.x << "," << position.y << "," << position.z);
   }
 
   // Install Mobility Model
@@ -405,10 +422,10 @@ main (int argc, char *argv[])
             << " V, MaxCapacitorVoltage=" << maxCapacitorVoltage
             << " V" << std::endl;
 
-  // Set up the data transmission for the Pre-Run
+  // Set up the data transmission for each UE
+  // Capacitor and energy harvester are installed for each UE, and the UEs are attached to the eNB.
   for (uint16_t i = 0; i < num_ues; i++)
     {
-      int access = RaUeUniformVariable->GetInteger (0, simTime.GetMilliSeconds());
       lteHelper->AttachSuspendedNb(ueLteDevs.Get(i), enbLteDevs.Get(0));
 
       Ptr<LteUeNetDevice> ueLteDevice = ueLteDevs.Get(i)->GetObject<LteUeNetDevice> ();
@@ -479,18 +496,21 @@ main (int argc, char *argv[])
       // Create a UdpEchoClient application to send UDP datagrams from node zero to
       // node one.
       //
+      Ptr<Node> client = ueNodes.Get(i);
+      Ptr<MarkovUdpClient> ulClient = CreateObject<MarkovUdpClient>();
+      ulClient->SetRemote(remoteHostAddr, ulPort);
+      ulClient->SetRates(packetinterval_app, packetinterval_app); // INACTIVE and ACTIVE intervals
+      ulClient->SetAttribute ("MaxPackets", UintegerValue (1000000));
+      ulClient->SetAttribute ("PacketSize", UintegerValue(packetsize_app));
+      ulClient->SetTransitionProbabilities(0.7, 0.2);  // P(INACTIVE→ACTIVE), P(ACTIVE→INACTIVE)
+      ulClient->TraceConnectWithoutContext("State", MakeBoundCallback(&StateChangeTracer, client->GetId()));
 
-      if (i < num_ues){
-        uint packetsize = packetsize_app_a;
-        UdpEchoClientHelper ulClient (remoteHostAddr, ulPort);
-        ulClient.SetAttribute ("Interval", TimeValue (packetinterval_app_a));
-        ulClient.SetAttribute ("MaxPackets", UintegerValue (1000000));
-        ulClient.SetAttribute ("PacketSize", UintegerValue(packetsize));
-        clientApps.Add (ulClient.Install (ueNodes.Get(i)));
+      // ulClient->SetNode (client);
+      client->AddApplication (ulClient);
+      clientApps.Add (ulClient);
 
-        serverApps.Get(i)->SetStartTime (MilliSeconds (access));
-        clientApps.Get(i)->SetStartTime (MilliSeconds (access));
-      }
+      serverApps.Get(i)->SetStartTime (access);
+      clientApps.Get(i)->SetStartTime (access);
     }
 
   /* **********************************
@@ -522,14 +542,17 @@ main (int argc, char *argv[])
   p2ph.EnablePcapAll(logdir + "lena-simple-epc");
   #endif
 
+  // Enable NetAnim animation
+  AnimationInterface anim (logdir + "lena-simple-epc.xml");
+  // start the simulation
   Simulator::Stop (simTime); // Pre-Run, Run, Post-Run
-  std::cout << "Log dir: ";
   Simulator::Run ();
   auto end = std::chrono::system_clock::now();
   std::chrono::duration<double> elapsed_seconds = end-start;
   std::time_t end_time = std::chrono::system_clock::to_time_t(end);
   std::cout << "Finished computation at " << std::ctime(&end_time);
   std::cout << "elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
+  std::cout << "logs in " << logdir << std::endl;
   Simulator::Destroy ();
   return 0;
 }

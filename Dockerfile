@@ -33,8 +33,8 @@ RUN apt install -y \
     wget \
     curl \
     unzip \
-    tcpdump \
-    wireshark
+    tcpdump
+    # wireshark
 
 RUN apt -y install python-is-python3
 RUN pip install matplotlib numpy pandas tqdm pyshark
