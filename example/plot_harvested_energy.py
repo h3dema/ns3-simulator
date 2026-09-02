@@ -2,7 +2,7 @@ import re
 import matplotlib.pyplot as plt
 from collections import defaultdict
 
-LOGFILE = "../logs/cap/1_60000000000_0_0/02_09_2026_17_37_47/0_1_TraceHarvestedPower.log"
+LOGFILE = "../logs/cap/1_60000000000_0_0/02_09_2026_18_27_30/0_1_TraceHarvestedPower.log"
 
 
 # Regex to capture:

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import io
 
-fname = "../logs/cap/1_60000000000_0_0/02_09_2026_17_37_47/0_1_Energy.log"
+fname = "../logs/cap/1_60000000000_0_0/02_09_2026_18_27_30/0_1_Energy.log"
 with open(fname, "r") as f:
     raw = f.read()
 
