@@ -3,6 +3,7 @@
 
 services:
   ns3:
+    image: ns3-nbiot
     build:
       context: .
     container_name: ns3-nbiot
