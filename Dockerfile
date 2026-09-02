@@ -52,7 +52,7 @@ RUN git -c http.version=HTTP/1.1 -c protocol.version=0 \
         clone https://github.com/h3dema/ns3-nbiot-ambient-iot.git /opt/ns3-nbiot
 
 # copy the example scenario file (list the in docs) into the scratch directory
-# COPY example/nb-scenario5.cc /opt/ns3-nbiot/scratch
+COPY example/nb-scenario5.cc /opt/ns3-nbiot/scratch
 
 # Set working directory to the NS-3 directory
 WORKDIR /opt/ns3-nbiot
