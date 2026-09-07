@@ -143,7 +143,7 @@ enum class HarvestType {
 static void StateChangeTracer(std::string logdir, int node_id, int oldVal, int newVal)
 {
   std::ofstream out(logdir + "StateChange.log", std::ios::app);
-  out << Simulator::Now().GetSeconds() << "s: State changed at node " << node_id << " from " << oldVal << " to " << newVal;
+  out << Simulator::Now().GetSeconds() << "s: State changed at node " << node_id << " from " << oldVal << " to " << newVal << std::endl;
   out.close();
 }
 
