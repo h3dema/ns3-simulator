@@ -140,9 +140,11 @@ enum class HarvestType {
  * @param oldVal Previous state value.
  * @param newVal New state value.
  */
-static void StateChangeTracer(int node_id, int oldVal, int newVal)
+static void StateChangeTracer(std::string logdir, int node_id, int oldVal, int newVal)
 {
-  NS_LOG_INFO(Simulator::Now().GetSeconds() << "s: State changed at node " << node_id << " from " << oldVal << " to " << newVal);
+  std::ofstream out(logdir + "StateChange.log", std::ios::app);
+  out << Simulator::Now().GetSeconds() << "s: State changed at node " << node_id << " from " << oldVal << " to " << newVal;
+  out.close();
 }
 
 
@@ -503,7 +505,7 @@ main (int argc, char *argv[])
       ulClient->SetAttribute ("MaxPackets", UintegerValue (1000000));
       ulClient->SetAttribute ("PacketSize", UintegerValue(packetsize_app));
       ulClient->SetTransitionProbabilities(0.7, 0.2);  // P(INACTIVE→ACTIVE), P(ACTIVE→INACTIVE)
-      ulClient->TraceConnectWithoutContext("State", MakeBoundCallback(&StateChangeTracer, client->GetId()));
+      ulClient->TraceConnectWithoutContext("State", MakeBoundCallback(&StateChangeTracer, logdir, client->GetId()));
 
       // ulClient->SetNode (client);
       client->AddApplication (ulClient);
