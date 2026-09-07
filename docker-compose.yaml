@@ -9,7 +9,7 @@ services:
     container_name: ns3-nbiot
     working_dir: /opt/ns3-nbiot
     volumes:
-      - ./ns3-nbiot:/ns3-nbiot
+      - ./ns3-nbiot:/opt/ns3-nbiot/scratch/my-scripts
       - ./logs:/opt/ns3-nbiot/logs
     stdin_open: true
     tty: true
